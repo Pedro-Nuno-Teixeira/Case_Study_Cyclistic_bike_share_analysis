@@ -5,8 +5,10 @@ This repository contains the code and files for my data analysis project using R
 
 ## Project Structure
 data/: This folder contains the raw data files used in the analysis.
-code/: This folder contains the R scripts used for data preprocessing, analysis, and visualization.
-results/: This folder stores the results and outputs generated during the analysis.
+
+
+Case_Study_bike_sharing_analysis/: This folder contains the .Rproj .tex .md and .Rmd files.
+Report.html : This file stores the results and outputs generated during the analysis.
 README.md: This file provides an overview of the project and instructions for running the code.
 
 ## Setup and Dependencies
