@@ -1,0 +1,456 @@
+---
+title: "Case Study: Cyclistic bike-share analysis"
+author: "Pedro Nuno Teixeira"
+date: "2023-03-15"
+output: 
+  prettydoc::html_pretty:
+    theme: leonids
+    fig_align: "center"
+---
+
+<style>
+/* Custom CSS to center the plots */
+img {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+</style>
+
+
+### Scenario
+
+In 2016, Cyclistic launched a successful bike-share offering. Since then, the program has grown to a fleet of 5,824 bicycles that are geotracked and locked into a network of 692 stations across Chicago. The bikes can be unlocked from one station and returned to any other station in the system anytime. Until now, Cyclistic's marketing strategy relied on building general awareness and appealing to broad consumer segments. One approach that helped make these things possible was the flexibility of its pricing plans: single-ride passes, full-day passes, and annual memberships. Customers who purchase single-ride or full-day passes are referred to as casual riders. Customers who purchase annual memberships are Cyclistic members.
+
+### Business Hypothesis
+
+*Focusing efforts on maximizing the number of annual members (Subscribers) will be key to future growth.*
+
+### Deliverables
+
+-   A clear statement of the business task
+
+-   A description of all data sources used
+
+-   Documentation of any cleaning or manipulation of data
+
+-   A summary of your analysis
+
+-   Supporting visualizations and key findings
+
+-   Your top three recommendations based on your analysis
+
+### Business Task
+
+-   Perform Analysis on historical data from bike trips in order to identify trends and patterns on how casual users and subscribers use Cyclistic bicycles differently.
+
+This will be achieved through importing, merging and cleaning the historical data sets of the customers trips from 2019, followed by the application of EDA (Exploratory Data Analysis) principles. Furthermore, the manipulation and plotting of different variables might expose interesting correlations and patterns that can provide better insights into the business question, thus allowing recommendations to be made and acted upon.
+
+### Data Sources
+
+The data has been made available by Motivate International Inc. under this [license](https://ride.divvybikes.com/data-license-agreement). The historical data from 2019 is divided in 4 different .csv files (by quarter):
+
+-   Divvy_Trips_2019_Q1
+-   Divvy_Trips_2019_Q2
+-   Divvy_Trips_2019_Q3
+-   Divvy_Trips_2019_Q4
+
+### Version Control
+
+-   **Divvy_Trips_2019_Q2_V1**: Changed all data column names to match other data.
+
+-   **Divvy_trips_2019_ANNUAL**: Bound all 4 quarters data sets into an annual one.
+
+-   **Divvy_trips_2019_ANNUAL_V1** : Setting all column names to "snake_case" convention; "trip_duration" from seconds to minutes; Isolating the date as one column "trip_date"; Creating Weekday column; Organizing the order of the column.
+
+-   **Divvy_trips_2019_ANNUAL_V2**: Dealing with null values (NA) in "gender" and "birthyear"; assigning "0" to inaccurate "birthyear".
+
+-   **Divvy_trips_2019_ANNUAL_V3**: Removing outliers using the *Chauvenet method*.
+
+-   **Divvy_trips_2019_clean**: Clean data set, ready for analysis - all further versions of this data set were created and documented in the respective code chunks serving only analysis specific purposes.
+
+### Documentation of the cleaning process
+
+Setup:
+
+```{r message=FALSE, warning=FALSE}
+
+library("tidyverse")
+library("lubridate")
+library("gridExtra")
+
+```
+
+
+Importing the 4 data sets of 2019 trips (divided by Quarters):
+
+```{r message=FALSE, warning=FALSE}
+
+Divvy_Trips_2019_Q4 <- read_csv("Divvy_Trips_data_sets/Divvy_Trips_2019_Q4.csv")
+Divvy_Trips_2019_Q3 <- read_csv("Divvy_Trips_data_sets/Divvy_Trips_2019_Q3.csv")
+Divvy_Trips_2019_Q2 <- read_csv("Divvy_Trips_data_sets/Divvy_Trips_2019_Q2.csv")
+Divvy_Trips_2019_Q1 <- read_csv("Divvy_Trips_data_sets/Divvy_Trips_2019_Q1.csv")
+
+```
+
+Taking a first peak at the data, it is clear that there are differences in the convention the company used in their data collection process - column names seem to vary across different quarters. For a proper analysis, a norm has to be established by renaming columns and setting them in matching order across different data sets.
+
+```{r}
+colnames(Divvy_Trips_2019_Q4)
+colnames(Divvy_Trips_2019_Q3)
+colnames(Divvy_Trips_2019_Q2)
+colnames(Divvy_Trips_2019_Q1)
+```
+
+Setting the column names from the 2º quarter data to the convention used in other quarters:
+
+```{r}
+Divvy_Trips_2019_Q2_V1 <- Divvy_Trips_2019_Q2 %>%
+  rename("trip_id" = "01 - Rental Details Rental ID")%>%
+  rename("start_time" = "01 - Rental Details Local Start Time") %>%
+  rename("end_time" = "01 - Rental Details Local End Time")%>%
+  rename("bikeid" = "01 - Rental Details Bike ID") %>%
+  rename("tripduration" = "01 - Rental Details Duration In Seconds Uncapped") %>%
+  rename("from_station_id" = "03 - Rental Start Station ID") %>%
+  rename("from_station_name" = "03 - Rental Start Station Name") %>%
+  rename("to_station_id" = "02 - Rental End Station ID") %>%
+  rename("to_station_name" = "02 - Rental End Station Name") %>%
+  rename("usertype" = "User Type") %>%
+  rename("gender" = "Member Gender") %>%
+  rename("birthyear" = "05 - Member Details Member Birthday Year") 
+
+```
+
+Making use of the str() function, I was capable of verifying that the 4 data sets have the same column names and data types. Based on this information, it seems reasonable to combine them into one.
+
+```{r}
+Divvy_trips_2019_ANNUAL <- rbind(Divvy_Trips_2019_Q1, Divvy_Trips_2019_Q2_V1, Divvy_Trips_2019_Q3, Divvy_Trips_2019_Q4)
+
+as_tibble(Divvy_trips_2019_ANNUAL) # verification 
+```
+
+Setting all column names to "snake_case" convention and "trip_duration" from seconds to minutes:
+
+```{r}
+Divvy_trips_2019_ANNUAL_V1 <- Divvy_trips_2019_ANNUAL %>%
+  rename(bike_id = bikeid) %>%
+  rename(trip_duration = tripduration) %>%
+  rename(user_type = usertype) %>%
+  mutate(trip_duration = trip_duration/60)
+```
+
+Isolating the date as one column "trip_date" (for the trips that started before midnight and ended after, the date in "trip_date" remounts to the previous in "start_time"):
+
+```{r}
+Divvy_trips_2019_ANNUAL_V1$trip_date <- as.Date(Divvy_trips_2019_ANNUAL_V1$start_time)
+Divvy_trips_2019_ANNUAL_V1$start_time <- format(as.POSIXct(Divvy_trips_2019_ANNUAL_V1$start_time), format = "%H:%M:%S")
+Divvy_trips_2019_ANNUAL_V1$end_time <- format(as.POSIXct(Divvy_trips_2019_ANNUAL_V1$end_time), format = "%H:%M:%S")
+  
+```
+
+Creating Weekday column:
+
+```{r}
+Divvy_trips_2019_ANNUAL_V1 <- Divvy_trips_2019_ANNUAL_V1 %>%
+  mutate(weekday = weekdays(trip_date))
+```
+
+Organizing the order of the columns:
+
+```{r}
+Divvy_trips_2019_ANNUAL_V1 <- Divvy_trips_2019_ANNUAL_V1 %>% 
+  relocate(bike_id, trip_date, weekday, .after = trip_id) %>%
+  relocate(to_station_id, .before = from_station_name)
+```
+
+Dealing with null values (NA):
+
+```{r}
+colSums(is.na(Divvy_trips_2019_ANNUAL_V1)) # checking the number of NA per column
+```
+
+As we can see, we only have null values in the "gender" and "birthyear" column. In this case, removing these entries from the data set is out of question, as it would imply a considerable loss in sample size, thus creating room for bias. Multiple imputation would be an option to consider (since we are working with categorical data, methods like logistic regression or ANOVA would work best), but I opted to keep the missing values and name them "Not Answered" for "gender" and assign them "0" for "birthyear".
+
+```{r}
+
+Divvy_trips_2019_ANNUAL_V2 <- replace_na(Divvy_trips_2019_ANNUAL_V1, list(gender = "Not Answered", birthyear = 0)) 
+
+```
+
+Checking data accuracy (duplicates, false entries..):
+
+```{r}
+n_distinct(Divvy_trips_2019_ANNUAL_V1$trip_id)
+n_distinct(Divvy_trips_2019_ANNUAL_V1$bike_id)
+
+n_distinct(Divvy_trips_2019_ANNUAL_V1$from_station_id)
+n_distinct(Divvy_trips_2019_ANNUAL_V1$to_station_id)
+n_distinct(Divvy_trips_2019_ANNUAL_V1$from_station_name)
+n_distinct(Divvy_trips_2019_ANNUAL_V1$to_station_name)
+
+n_distinct(Divvy_trips_2019_ANNUAL_V1$user_type)
+n_distinct(Divvy_trips_2019_ANNUAL_V1$gender)
+```
+
+```{r}
+summary(Divvy_trips_2019_ANNUAL_V1)
+```
+
+**trip_id**: There seems to be no duplicated data as the number of different trip id's matches the number of rows.
+
+**bike_id**: The number of different bike id's surpasses the provided number of fleet bikes (6017 \> 5824). Looking at the maximum value, we can see bike id's go up to 6946. This apparent error might be caused by a number of reasons that cannot be confirmed without further investigation on how the data was collected and how the system assigns bike id's. At the moment, I do not possess the means to pursue this matter. Fortunately, this does not seem relevant to the analysis at hand, although it should be noted.
+
+**from_station_id, to_station_id, from_station_name, to_station_name**: There is a slight discrepancy between the number of stations names and the corresponding station id's. This signals that there are inaccuracies somewhere in between these pair of columns. Having in mind the scope of this analysis, this will be left untended as it will not impact the business task at hands.
+
+**user_type**: The number of possible entries (customer, subscriber) matches the number of distinct values (2).
+
+**gender**: The number of possible entries (male, female, Not Answered) matches the number of distinct values (3).
+
+**birthyear**: Looking at the minimum value (min: 1759), we can assure that there is some faulty data (or corpses riding around!). To correct this, we will consider that no one older than 100 years used the service by assigning "0" to their "birthyear".
+
+```{r}
+Divvy_trips_2019_ANNUAL_V2$birthyear[Divvy_trips_2019_ANNUAL_V2$birthyear < 1919] <- 0  
+```
+
+**trip_duration**: The max value clearly shows that there are some outliers (the longest ride recorded lasted 123 days). Upon further investigation, it was concluded that there is a considerable amount of outliers (not just a handfull). To deal with this, the Chauvenet criterion was implemented:
+
+```{r}
+
+mean_value <- mean(Divvy_trips_2019_ANNUAL_V2$trip_duration)
+sd_value <- sd(Divvy_trips_2019_ANNUAL_V2$trip_duration)
+
+distance <- abs(Divvy_trips_2019_ANNUAL_V2$trip_duration - mean_value)
+probability <- 2 * (1 - pnorm(distance, mean = 0, sd = sd_value))
+
+chauvenet_criterion <- length(Divvy_trips_2019_ANNUAL_V2$trip_duration) * probability
+
+Divvy_trips_2019_ANNUAL_V3 <- Divvy_trips_2019_ANNUAL_V2 %>%
+  filter(distance < chauvenet_criterion)
+
+```
+
+The data set can now be considered clean and ready for analysis:
+
+```{r}
+Divvy_trips_2019_clean <- Divvy_trips_2019_ANNUAL_V3
+```
+
+### Analysis
+
+To have and idea of were we stand, the pie chart below shows us the contrast between the number of trips performed by customers and subscribers:
+
+```{r}
+pie(table(Divvy_trips_2019_clean$user_type), main = "User type", col = c("#fdb415", "#003168"), labels = c("Customer (23%)", "Subscriber (77%)"))
+
+```
+
+To get a better look at the average ride length by user type, only trips up to 1 hour were considered (3rd quartile = 21min) as they suffice in representing the sample of data (longer trips are very sporadic and might include long breaks users took in between stations):
+
+```{r}
+
+Divvy_trips_2019_clean %>%
+  filter(trip_duration <= 60) %>%
+  ggplot(aes(x = trip_duration, fill = user_type)) +
+    geom_histogram(binwidth = 5, position = "dodge") +
+    labs(title = "Ride Length",
+       x = "Ride Length (minutes)",
+       y = "Trip count", 
+       fill = "User type") +
+    theme(plot.title = element_text(face = "bold", size = 15, hjust = 0.5)) +
+    scale_fill_manual(values = c("#fdb415", "#003168")) 
+
+```
+
+As we can see, the most usual ride length peaks around 5min for Subscribers and around 15min for Customers. This difference can be simply explained by the fact that subscribers can borrow a bike at no cost any time while customers, to avoid unnecessary expenses, might consider walking in case of shorter distances.
+
+Now let's check how users differ across the week:
+
+```{r}
+Divvy_trips_2019_clean %>%
+  ggplot(aes(x = weekday, fill = user_type)) +
+    geom_bar() +
+    labs(title = "Weekday Popularity",
+       x = "Day of the Week",
+       y = "Trip count",
+       fill = "User type") +
+    facet_wrap(~ user_type) +
+    theme(panel.spacing = unit(0.5, "cm"), 
+          plot.title = element_text(face = "bold", size = 15, hjust = 0.5),  axis.text.x = element_text(angle = 45, hjust = 1)) +
+    scale_fill_manual(values = c("#fdb415", "#003168"))
+
+```
+
+As the data shows, customers have a preference for the weekend's while subscribers use the service more often on weekdays. This suggests that subscribers mainly use Cyclistic for transportation purposes, while customers tend to use it for leisure activities.
+
+Let's see which are the busiest hours:
+
+```{r}
+
+# Creating start_hour (isolating hour from "start_time")
+
+Divvy_trips_2019_clean1 <- Divvy_trips_2019_clean %>%
+  mutate(start_hour = substr(start_time, start = 1, stop = 2))   
+Divvy_trips_2019_clean1 %>%
+  ggplot(aes(x = start_hour, fill = user_type)) +
+    geom_bar() +
+    labs(title = "Busy Hours",
+       x = "Hour of the day",
+       y = "Trip count",
+       fill = "User type") +
+    facet_wrap(~ user_type) +
+    theme(panel.spacing = unit(0.5, "cm"), 
+          plot.title = element_text(face = "bold", size = 15, hjust = 0.5)) +
+    coord_flip() +
+    scale_fill_manual(values = c("#fdb415", "#003168"))
+
+```
+
+According to the data, the hour with the highest usage for both customers and subscribers is 17:00 o'clockli. However, there are notable differences between the two user types that should be highlighted:
+
+-   Subscribers tend to use Cyclistic most frequently during their morning and afternoon commutes, with peak usage occurring between 7:00-8:00 and 16:00-19:00, respectively. This reinforces the finding that subscribers primarily use Cyclistic for work-related travel.
+
+-   In contrast, customer's usage gradually increases throughout the morning and afternoon and peaks at 17:00, then gradually decreases as night falls. Unlike subscribers, customers do not have a strong preference for a specific hour or distinct peak usage. Instead, the number of trips is relatively consistent throughout their preferred usage interval, which spans from approximately 10:00-19:00.
+
+Let's see which are the preferred months to use the bike-sharing service:
+
+```{r message=FALSE, warning=FALSE}
+# Creating month (isolating month from "trip_date")
+
+Divvy_trips_2019_clean1 <- Divvy_trips_2019_clean1 %>%   
+  mutate(month = month(as.Date(trip_date, format = "%Y-%m-%d"), label = TRUE))   
+
+Divvy_trips_2019_clean1 %>%
+  ggplot(aes(x = month, fill = user_type)) +
+    geom_bar() +
+    labs(title = "Monthly Popularity",
+       x = "Month",
+       y = "Trip count",
+       fill = "User type") +
+    facet_wrap(~ user_type) +
+    theme(panel.spacing = unit(0.5, "cm"), 
+          plot.title = element_text(face = "bold", size = 15, hjust = 0.5),
+          axis.text.x = element_text(angle = 45, hjust = 1)) +
+    scale_fill_manual(values = c("#fdb415", "#003168"))
+
+```
+
+Based on the data, it appears that the popularity of Cyclistic remains consistent throughout the year for both customers and subscribers. One possible explanation for this trend is the influence of seasonal weather patterns, as the preferred months for both groups tend to be associated with warmer, less rainy weather conditions. Bearing this in mind, there is suggestion that the service experiences higher usage in the summer months, while the winter months see relatively lower usage - this should be noted for strategic marketing campaigns.
+
+Ranking the start and end stations by popularity (top 10) and user type:
+
+```{r message=FALSE, warning=FALSE}
+
+# Top 10 Start stations - Subscriber
+
+Divvy_trips_2019_clean2 <- Divvy_trips_2019_clean1 %>%
+  filter(user_type == "Subscriber") %>%
+  group_by(from_station_name) %>%
+  summarize(num_rides = n()) %>%
+  arrange(desc(num_rides)) %>%
+  head(10)
+
+plot1 <- Divvy_trips_2019_clean2 %>%
+    ggplot(aes(x = num_rides, y = reorder(from_station_name, num_rides))) +
+    geom_col(fill = "#003168") +
+    scale_x_continuous(breaks = seq(0, 60000, by = 20000))+
+    labs(title = "Top 10 Start Stations",
+       x = "",
+       y = "",
+       fill = "User type") +
+    theme(panel.spacing = unit(0.5, "cm"), 
+          plot.title = element_text(face = "bold", size = 10, hjust = 0.5))
+
+
+# Top 10 End stations - Subscriber
+
+Divvy_trips_2019_clean4 <- Divvy_trips_2019_clean1 %>%
+  filter(user_type == "Subscriber") %>%
+  group_by(to_station_name) %>%
+  summarize(num_rides = n()) %>%
+  arrange(desc(num_rides)) %>%
+  head(10)
+
+plot2 <-Divvy_trips_2019_clean4 %>%
+    ggplot(aes(x = num_rides, y = reorder(to_station_name, num_rides))) +
+    geom_col(fill = "#003168") +
+    scale_x_continuous(breaks = seq(0, 60000, by = 20000))+
+    labs(title = "Top 10 End Stations",
+       x = "",
+       y = "",
+       fill = "User type") +
+    theme(panel.spacing = unit(0.5, "cm"), 
+          plot.title = element_text(face = "bold", size = 10, hjust = 0.5))
+
+
+# Top 10 Start stations - Customer
+
+Divvy_trips_2019_clean5 <- Divvy_trips_2019_clean1 %>%
+  filter(user_type == "Customer") %>%
+  group_by(from_station_name) %>%
+  summarize(num_rides = n()) %>%
+  arrange(desc(num_rides)) %>%
+  head(10)
+  
+plot3 <- Divvy_trips_2019_clean5 %>%
+  ggplot(aes(x = num_rides, y = reorder(from_station_name, num_rides))) +
+    geom_col(fill = "#fdb415") +
+    labs(title = "Top 10 Start Stations",
+       x = "",
+       y = "",
+       fill = "User type") +
+    theme(panel.spacing = unit(0.5, "cm"), 
+          plot.title = element_text(face = "bold", size = 10, hjust = 0.5))   
+
+# Top 10 End stations - Customer
+
+Divvy_trips_2019_clean3 <- Divvy_trips_2019_clean1 %>%
+  filter(user_type == "Customer") %>%
+  group_by(to_station_name) %>%
+  summarize(num_rides = n()) %>%
+  arrange(desc(num_rides)) %>%
+  head(10)
+  
+plot4 <- Divvy_trips_2019_clean3 %>%
+         ggplot(aes(x = num_rides, y = reorder(to_station_name, num_rides))) +
+            geom_col(fill = "#fdb415") +
+             labs(title = "Top 10 End Stations",
+              x = "",
+              y = "",
+              fill = "User type") +
+          theme(panel.spacing = unit(0.5, "cm"), 
+          plot.title = element_text(face = "bold", size = 10, hjust = 0.5))   
+
+
+
+# Plot the 4 graphs for comparison
+
+grid.arrange(plot1, plot2, plot3, plot4)
+
+
+```
+
+As the data shows, the most used stations for Subscribers are "Clinton St & Washington Blvd", "Canal St & Adams St" and "Clinton St & Madison St" ranking distinctively in the top 3 for both start and end stations. When it comes to popular stations for customers, "Streeter Dr & Grand Avenue" and "Lake Shore Dr & Monroe St" reign supreme, with the former being the clear champion. In fact, "Streeter Dr & Grand Avenue" consistently attracts double the number of riders when compared to the other top 10 stations. It's no wonder that these two stations are favorites among customers, as they offer convenient access to key locations and attractions in the area.
+
+### Key take aways
+
+-   Customers take longer rides than Subscribers due to cost-effectiveness considerations.
+
+-   5 minute rides are popular for subscribers, and 15 minute rides are popular for customers.
+
+-   Subscribers use Cyclistic mostly on weekdays for transportation, while customers prefer weekends for leisure.
+
+-   Peak usage hour for both groups is 17:00, but subscribers have an additional peak during their morning commute (7:00-8:00). Customer's usage gradually increases throughout the morning and afternoon up to 17:00, then gradually decreases as night falls.
+
+-   Cyclistic's popularity among different user types remains consistent throughout the year, possibly due to seasonal weather patterns (warmer, less rainy months are associated with overall higher usage of the service).
+
+-   For Subscribers, the top 3 most used stations for both starting and ending trips are: "Clinton St & Washington Blvd", "Canal St & Adams St" and "Clinton St & Madison St". For Customers, the most popular stations are "Streeter Dr & Grand Avenue" and "Lake Shore Dr & Monroe St", with the former being the clear winner.
+
+-   Stations popularity for customers is primarily due to their convenient access to key attractions in the area (situated near the water).
+
+### Recommendations
+
+-   Cyclistic could emphasize the convenience of subscribing to the service, such as the ability to reserve a bike in advance and pick it up at a specific station, avoiding the hassle of searching for available bikes during peak hours.
+
+-   Cyclistic could offer promotions to customers such as discounted subscription rates or free trial periods. These promotions could be timed strategically to coincide with periods of high usage or seasonal changes.
+
+-   On the spot marketing campaigns aiming at converting customers to subscribers should be implemented near their most popular stations such as "Streeter Dr & Grand Avenue" and "Lake Shore Dr & Monroe St".

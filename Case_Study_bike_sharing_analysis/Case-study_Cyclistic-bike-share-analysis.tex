@@ -1,0 +1,121 @@
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+%
+\documentclass[
+]{article}
+\usepackage{amsmath,amssymb}
+\usepackage{lmodern}
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math}
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+\usepackage{xcolor}
+\usepackage[margin=1in]{geometry}
+\usepackage{graphicx}
+\makeatletter
+\def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
+\def\maxheight{\ifdim\Gin@nat@height>\textheight\textheight\else\Gin@nat@height\fi}
+\makeatother
+% Scale images if necessary, so that they will not overflow the page
+% margins by default, and it is still possible to overwrite the defaults
+% using explicit options in \includegraphics[width, height, ...]{}
+\setkeys{Gin}{width=\maxwidth,height=\maxheight,keepaspectratio}
+% Set default figure placement to htbp
+\makeatletter
+\def\fps@figure{htbp}
+\makeatother
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setcounter{secnumdepth}{-\maxdimen} % remove section numbering
+\ifLuaTeX
+  \usepackage{selnolig}  % disable illegal ligatures
+\fi
+\IfFileExists{bookmark.sty}{\usepackage{bookmark}}{\usepackage{hyperref}}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\urlstyle{same} % disable monospaced font for URLs
+\hypersetup{
+  pdftitle={Casa Study: Cyclistic bike-share analysis},
+  pdfauthor={Pedro Nuno Teixeira},
+  hidelinks,
+  pdfcreator={LaTeX via pandoc}}
+
+\title{Casa Study: Cyclistic bike-share analysis}
+\author{Pedro Nuno Teixeira}
+\date{2023-03-15}
+
+\begin{document}
+\maketitle
+
+\hypertarget{case-study-cyclistic-bike-share-analysis}{%
+\section{Case study: Cyclistic bike-share
+analysis}\label{case-study-cyclistic-bike-share-analysis}}
+
+\hypertarget{about-the-company}{%
+\subsubsection{About the company}\label{about-the-company}}
+
+dddIn 2016, Cyclistic launched a successful bike-share offering. Since
+then, the program has grown to a fleet of 5,824 bicycles that are
+geotracked and locked into a network of 692 stations across Chicago. The
+bikes can be unlocked from one station and returned to any other station
+in the system anytime. Until now, Cyclistic's marketing strategy relied
+on building general awareness and appealing to broad consumer segments.
+One approach that helped make these things possible was the flexibility
+of its pricing plans: single-ride passes, full-day passes, and annual
+memberships. Customers who purchase single-ride or full-day passes are
+referred to as casual riders. Customers who purchase annual memberships
+are Cyclistic members.
+
+\hypertarget{business-hipothesis}{%
+\subsubsection{Business Hipothesis}\label{business-hipothesis}}
+
+\emph{Focusing efforts on maximizing the number of annual members will
+be key to future growth}
+
+\hypertarget{deliverables}{%
+\subsubsection{Deliverables}\label{deliverables}}
+
+\begin{itemize}
+\item
+  A clear statement of the business task
+\item
+  A description of all data sources used
+\item
+  Documentation of any cleaning or manipulation of data
+\item
+  A summary of your analysis
+\item
+  Supporting visualizations and key findings 6. Your top three
+  recommendations based on your analysis
+\end{itemize}
+
+\hypertarget{business-question}{%
+\subsubsection{Business Question}\label{business-question}}
+
+\emph{How do annual members and casual riders use ``Cyclistic'' bikes
+differently?}
+
+\end{document}
