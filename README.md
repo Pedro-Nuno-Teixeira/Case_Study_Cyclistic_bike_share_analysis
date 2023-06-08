@@ -1,7 +1,7 @@
 # Case-Study: Cyclistic bike Share analysis
 
 ## Project Overview
-This repository contains the code and files for my data analysis project using R. The goal of this project is to perform in-depth data analysis on [describe the dataset or topic].
+This repository contains the code and files for my data analysis project using R. The goal of this project is to perform in-depth analysis on historical data from a bike-sharing company to identify the key differences between customers and subscribers - aiming to increase conversion rate.
 
 ## Project Structure
 data/: This folder contains the raw data files used in the analysis.
